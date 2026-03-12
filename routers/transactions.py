@@ -2,38 +2,39 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Transaction
+from models import Transaction, User
 from schemas import TransactionCreate, TransactionResponse
+from finauth import get_current_user
 from typing import List
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
-# sabhi transactions lene ke liye
+# GET all transactions (only yours)
 @router.get("/", response_model=List[TransactionResponse])
-def get_transactions(db: Session = Depends(get_db)):
-    return db.query(Transaction).all()
+def get_transactions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Transaction).filter(Transaction.user_id == current_user.id).all()
 
-# ek transaction lene ke liye id se
+# GET single transaction
 @router.get("/{id}", response_model=TransactionResponse)
-def get_transaction(id: int, db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter(Transaction.id == id).first()
+def get_transaction(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    t = db.query(Transaction).filter(Transaction.id == id, Transaction.user_id == current_user.id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return t
 
-# naya transaction banane ke liye
+# POST create new transaction
 @router.post("/", response_model=TransactionResponse)
-def create_transaction(data: TransactionCreate, db: Session = Depends(get_db)):
-    t = Transaction(**data.dict())
+def create_transaction(data: TransactionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    t = Transaction(**data.dict(), user_id=current_user.id)
     db.add(t)
     db.commit()
     db.refresh(t)
     return t
 
-# transaction update karne ke liye
+# PUT update transaction
 @router.put("/{id}", response_model=TransactionResponse)
-def update_transaction(id: int, data: TransactionCreate, db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter(Transaction.id == id).first()
+def update_transaction(id: int, data: TransactionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    t = db.query(Transaction).filter(Transaction.id == id, Transaction.user_id == current_user.id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Transaction not found")
     for key, value in data.dict().items():
@@ -42,10 +43,10 @@ def update_transaction(id: int, data: TransactionCreate, db: Session = Depends(g
     db.refresh(t)
     return t
 
-# transaction delete karne ke liye
+# DELETE transaction
 @router.delete("/{id}")
-def delete_transaction(id: int, db: Session = Depends(get_db)):
-    t = db.query(Transaction).filter(Transaction.id == id).first()
+def delete_transaction(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    t = db.query(Transaction).filter(Transaction.id == id, Transaction.user_id == current_user.id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Transaction not found")
     db.delete(t)

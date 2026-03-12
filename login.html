@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finance Tracker — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f14; --surface: #13161e; --surface2: #1a1e29; --border: #252a38;
+      --text: #e8eaf0; --muted: #5a6180; --income: #34d89b; --expense: #f0546a; --accent: #5b7bff;
+      --income-bg: rgba(52,216,155,0.08); --expense-bg: rgba(240,84,106,0.08); --accent-bg: rgba(91,123,255,0.10);
+    }
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .logo span { color: var(--income); }
+    .tagline { font-size: 0.78rem; color: var(--muted); margin-bottom: 40px; letter-spacing: 0.06em; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .tab {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
+    .tab.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.67rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+    input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-family: 'DM Mono', monospace; font-size: 0.85rem; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,123,255,0.12); }
+
+    .submit-btn {
+      width: 100%; padding: 13px; border-radius: 10px; border: none;
+      background: var(--accent); color: #fff;
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
+      letter-spacing: 0.04em; cursor: pointer; margin-top: 8px;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+
+    .error-msg {
+      background: var(--expense-bg);
+      border: 1px solid var(--expense);
+      color: var(--expense);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .success-msg {
+      background: var(--income-bg);
+      border: 1px solid var(--income);
+      color: var(--income);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">fin<span>.</span>track</div>
+  <div class="tagline">track your money, own your future</div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" id="tab-login"    onclick="switchTab('login')">Login</button>
+      <button class="tab"        id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div id="error-msg"   class="error-msg"></div>
+    <div id="success-msg" class="success-msg"></div>
+
+    <!-- Login Form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="login-username" placeholder="Enter your username"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter your password"/>
+      </div>
+      <button class="submit-btn" onclick="login()">Login →</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="reg-username" placeholder="Choose a username"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Choose a password"/>
+      </div>
+      <button class="submit-btn" onclick="register()">Create Account →</button>
+    </div>
+  </div>
+
+<script>
+  const API = 'http://127.0.0.1:8000';
+
+  function switchTab(tab) {
+    document.getElementById('login-form').style.display    = tab === 'login'    ? 'block' : 'none';
+    document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('tab-login').className    = 'tab' + (tab === 'login'    ? ' active' : '');
+    document.getElementById('tab-register').className = 'tab' + (tab === 'register' ? ' active' : '');
+    hideMessages();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg; el.style.display = 'block';
+    document.getElementById('success-msg').style.display = 'none';
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('success-msg');
+    el.textContent = msg; el.style.display = 'block';
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  function hideMessages() {
+    document.getElementById('error-msg').style.display   = 'none';
+    document.getElementById('success-msg').style.display = 'none';
+  }
+
+  async function login() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    if (!username || !password) return showError('Please fill in both fields');
+    try {
+      const res = await fetch(API + '/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showError(data.detail || 'Login failed');
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('username', username);
+      window.location.href = 'index.html';
+    } catch(e) { showError('Could not connect to API'); }
+  }
+
+  async function register() {
+    const username = document.getElementById('reg-username').value.trim();
+    const password = document.getElementById('reg-password').value.trim();
+    if (!username || !password) return showError('Please fill in both fields');
+    if (password.length < 6) return showError('Password must be at least 6 characters');
+    try {
+      const res = await fetch(API + '/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showError(data.detail || 'Registration failed');
+      showSuccess('Account created! You can now log in.');
+      switchTab('login');
+    } catch(e) { showError('Could not connect to API'); }
+  }
+
+  // If already logged in, skip to dashboard
+  if (localStorage.getItem('token')) window.location.href = 'index.html';
+</script>
+</body>
+</html>

@@ -171,7 +171,11 @@
 
 <header>
   <div class="logo">fin<span>.</span>track</div>
-  <div class="header-date" id="header-date"></div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <div class="header-date" id="header-date"></div>
+    <span style="font-size:0.75rem; color:var(--muted);">👤 <span id="header-username"></span></span>
+    <button onclick="logout()" style="padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-family:'DM Mono',monospace; font-size:0.72rem; cursor:pointer; letter-spacing:0.04em;">Logout</button>
+  </div>
 </header>
 
 <main>
@@ -252,6 +256,16 @@
 
 <script>
   const API = 'https://web-production-5c06c.up.railway.app';
+  const token = localStorage.getItem('token');
+if (!token) window.location.href = 'login.html';
+const username = localStorage.getItem('username');
+document.getElementById('header-username').textContent = username || '';
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  window.location.href = 'login.html';
+}
   let allTransactions = [];
   let activeFilter = 'all';
   let chartInstance = null;
@@ -284,7 +298,10 @@
 
   async function loadTransactions() {
     try {
-      const res = await fetch(API + '/transactions/');
+      const res = await fetch(API + '/transactions/', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.status === 401) { logout(); return; }
       allTransactions = await res.json();
       updateSummary(allTransactions);
       renderFiltered();
@@ -405,7 +422,7 @@
     try {
       const res = await fetch(API + '/transactions/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ title, amount, category, type, date, notes: notes||null })
       });
       if (!res.ok) throw new Error();
@@ -420,7 +437,10 @@
 
   async function deleteTransaction(id) {
     try {
-      const res = await fetch(API + '/transactions/' + id, { method: 'DELETE' });
+      const res = await fetch(API + '/transactions/' + id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
       if (!res.ok) throw new Error();
       showToast('Transaction deleted');
       loadTransactions();
@@ -443,6 +463,6 @@
   }
 
   loadTransactions();
-</script>
-</body>
-</html>
+  </script>
+  </body>
+  </html>

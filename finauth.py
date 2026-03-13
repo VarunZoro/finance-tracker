@@ -15,7 +15,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
 def hash_password(password: str):
-    password = password[:72]   # bcrypt limit
+    password = password[:72]
     return pwd_context.hash(password)
 
 def verify_password(plain, hashed):

@@ -6,8 +6,12 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "fintrack-super-secret-key-2026"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-key-change-me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
